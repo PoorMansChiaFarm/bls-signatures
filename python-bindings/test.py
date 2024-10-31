@@ -1,7 +1,6 @@
 # flake8: noqa: E501
 import binascii
 import time
-from copy import deepcopy
 
 from blspy import (
     AugSchemeMPL,
@@ -10,7 +9,6 @@ from blspy import (
     G2Element,
     PopSchemeMPL,
     PrivateKey,
-    Util,
 )
 
 
@@ -40,6 +38,12 @@ def test_schemes():
     seed = bytes([2]) + seed[1:]
     sk2 = BasicSchemeMPL.key_gen(seed)
     pk2 = sk2.get_g1()
+
+    g1 = G1Element.from_message(b"abcd", b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_AUG_")
+    assert bytes(g1) == bytes.fromhex("a5f756594a96c55f302360378568378dc19ea5eae3d5a88d77b8a30bb25c25ce24a85c6d7c851bcb1e34064fc0c79383")
+
+    g2 = G2Element.from_message(b"abcd", b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_AUG_")
+    assert g2 == AugSchemeMPL.g2_from_message(b"abcd")
 
     for Scheme in (BasicSchemeMPL, AugSchemeMPL, PopSchemeMPL):
         # Aggregate same message
@@ -128,7 +132,7 @@ def test_vectors_invalid():
     for s in invalid_inputs_1:
         bytes_ = binascii.unhexlify(s)
         try:
-            g1 = G1Element(bytes_)
+            G1Element(bytes_)
             assert False, "Failed to disallow creation of G1 element."
         except Exception as e:
             pass
@@ -136,7 +140,7 @@ def test_vectors_invalid():
     for s in invalid_inputs_2:
         bytes_ = binascii.unhexlify(s)
         try:
-            g2 = G2Element(bytes_)
+            G2Element(bytes_)
             assert False, "Failed to disallow creation of G2 element."
         except Exception as e:
             pass

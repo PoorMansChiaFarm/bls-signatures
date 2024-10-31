@@ -90,7 +90,6 @@ PYBIND11_MODULE(blspy, m)
 
     py::class_<Util>(m, "Util").def("hash256", [](const py::bytes &message) {
         std::string str(message);
-        const uint8_t *input = reinterpret_cast<const uint8_t *>(str.data());
         uint8_t output[BLS::MESSAGE_HASH_LEN];
         {
             py::gil_scoped_release release;
@@ -418,7 +417,12 @@ PYBIND11_MODULE(blspy, m)
               return G1Element::FromBytesUnchecked({data_ptr, G1Element::SIZE});
             })
         .def("generator", &G1Element::Generator)
-        .def("from_message", py::overload_cast<const std::vector<uint8_t>&, const uint8_t*, int>(&G1Element::FromMessage), py::call_guard<py::gil_scoped_release>())
+        .def("from_message", [](std::string const msg, std::string const dst) {
+            py::gil_scoped_release release;
+            return G1Element::FromMessage(
+                std::vector<uint8_t>(msg.data(), msg.data() + msg.size()),
+                (uint8_t const*)dst.data(), dst.size());
+        })
         .def("pair", &G1Element::Pair, py::call_guard<py::gil_scoped_release>())
         .def("negate", &G1Element::Negate, py::call_guard<py::gil_scoped_release>())
         .def("get_fingerprint", &G1Element::GetFingerprint, py::call_guard<py::gil_scoped_release>())
@@ -435,20 +439,6 @@ PYBIND11_MODULE(blspy, m)
             [](G1Element &self, G1Element &other) {
                 py::gil_scoped_release release;
                 return self + other;
-            },
-            py::is_operator())
-        .def(
-            "__mul__",
-            [](G1Element &self, bn_t other) {
-                py::gil_scoped_release release;
-                return self * (*(bn_t *)&other);
-            },
-            py::is_operator())
-        .def(
-            "__rmul__",
-            [](G1Element &self, bn_t other) {
-                py::gil_scoped_release release;
-                return self * (*(bn_t *)&other);
             },
             py::is_operator())
         .def(
@@ -560,7 +550,12 @@ PYBIND11_MODULE(blspy, m)
               return G2Element::FromBytesUnchecked({data_ptr, G2Element::SIZE});
             })
         .def("generator", &G2Element::Generator)
-        .def("from_message", py::overload_cast<const std::vector<uint8_t>&, const uint8_t*, int>(&G2Element::FromMessage), py::call_guard<py::gil_scoped_release>())
+        .def("from_message", [](std::string const msg, std::string const dst) {
+            py::gil_scoped_release release;
+            return G2Element::FromMessage(
+                std::vector<uint8_t>(msg.data(), msg.data() + msg.size()),
+                (uint8_t const*)dst.data(), dst.size());
+        })
         .def("pair", &G2Element::Pair, py::call_guard<py::gil_scoped_release>())
         .def("negate", &G2Element::Negate, py::call_guard<py::gil_scoped_release>())
         .def(
@@ -578,21 +573,6 @@ PYBIND11_MODULE(blspy, m)
                 return self + other;
             },
             py::is_operator())
-        .def(
-            "__mul__",
-            [](G2Element &self, bn_t other) {
-                py::gil_scoped_release release;
-                return self * (*(bn_t *)&other);
-            },
-            py::is_operator())
-        .def(
-            "__rmul__",
-            [](G2Element &self, bn_t other) {
-                py::gil_scoped_release release;
-                return self * (*(bn_t *)&other);
-            },
-            py::is_operator())
-
         .def(
             "__repr__",
             [](const G2Element &ele) {
